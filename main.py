@@ -91,12 +91,11 @@ while True:
                     snake.update_direction(new_direction)
                     break
 
-            if snake.is_snake_move_valid():
+            snake.move()
+            if snake.is_body_valid():
                 if snake.is_apple_eaten(apple):
                     snake.grow()
                     apple.reposition(snake.body)
-                else:
-                    snake.move()
             else:
                 game_state = GameState.END
 
