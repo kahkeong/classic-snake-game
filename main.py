@@ -1,75 +1,38 @@
+from collections import defaultdict
 import pygame
-
+import sys
+import config as c
+from text import Text
 from enum_game_state import GameState
-from enum_map_size import MapSize
 from enum_snake_direction import SnakeDirection
 from snake import Snake
 from apple import Apple
+from helper import rect_helper
 
 
-pygame.init()
+class Game:
+    def __init__(self):
+        self.state = GameState.MAIN_MENU
+        self.snake = None
+        self.apple = None
+        self.surface = None
+        self.objects = defaultdict(list)
+        self.clock = pygame.time.Clock()
 
-BLOCK_SIZE = 20
-INITIAL_SNAKE_DIRECTION = SnakeDirection.TOP
-MAP_SIZE = MapSize.SMALL.value
-WIDTH = BLOCK_SIZE * MAP_SIZE
-HEIGHT = WIDTH
-GAP = 2
-FPS = 5
+        pygame.font.init()
+        self.font = pygame.font.SysFont("Comic Sans MS", 15)
+        self.big_font = pygame.font.SysFont("Comic Sans MS", 25)
+        self.surface = pygame.display.set_mode((c.WIDTH, c.HEIGHT))
 
-block_color = 0, 100, 255
-apple_color = 255, 0, 0
-snake_color = 0, 255, 100
-main_menu_background_color = 0, 100, 255
-gap_color = 0, 0, 0
-text_color = 255, 153, 0
+    def handle_events(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.KEYDOWN:
+                if self.state == GameState.IN_PROGRESS:
+                    new_direction = self.snake.direction
 
-game_state = GameState.MAIN_MENU
-snake = Snake(MAP_SIZE, snake_color, INITIAL_SNAKE_DIRECTION.value)
-apple = Apple(MAP_SIZE, apple_color)
-
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
-font = pygame.font.SysFont("Comic Sans MS", 15)
-big_font = pygame.font.SysFont("Comic Sans MS", 30)
-clock = pygame.time.Clock()
-
-
-# to create a thin line of gap between each block
-# eg if block = # and line = $, default
-#  ###  with this function  $$$
-#  ###                      $#$
-#  ###                      $$$
-def rect_helper(coor_x, coor_y):
-    return pygame.Rect(
-        coor_x * BLOCK_SIZE + GAP,
-        coor_y * BLOCK_SIZE + GAP,
-        BLOCK_SIZE - 2 * GAP,
-        BLOCK_SIZE - 2 * GAP,
-    )
-
-
-while True:
-    clock.tick(FPS)
-
-    # logic code start here
-    if game_state == GameState.MAIN_MENU:
-        events = pygame.event.get()
-        for event in events:
-            if event.type == pygame.KEYDOWN:
-                game_state = GameState.IN_PROGRESS
-
-    elif game_state == GameState.IN_PROGRESS:
-        events = pygame.event.get()
-
-        for event in events:
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_p:
-                    game_state = GameState.PAUSED
-
-        if game_state != GameState.PAUSED:
-            new_direction = snake.direction
-            for event in events:
-                if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_LEFT:
                         new_direction = SnakeDirection.LEFT.value
                     elif event.key == pygame.K_RIGHT:
@@ -78,96 +41,102 @@ while True:
                         new_direction = SnakeDirection.TOP.value
                     elif event.key == pygame.K_DOWN:
                         new_direction = SnakeDirection.BOTTOM.value
+                    elif event.key == pygame.K_p:
+                        self.state = GameState.PAUSED
 
-                # if length is 1, snake can move to any direction it like and
-                # if new direction is same or is opposite, we skip (in each iteration of game loop,
-                # multiple keys can be pressed at the same time)
-                if snake.length() > 1 and (
-                    snake.direction == new_direction
-                    or (new_direction[0] * -1, new_direction[1] * -1) == snake.direction
-                ):
-                    pass
-                else:
-                    snake.update_direction(new_direction)
-                    break
+                    # if length is 1, snake can move to any direction it like and
+                    # if new direction is same or is opposite, we skip (in each iteration of game loop,
+                    # multiple keys can be pressed at the same time)
+                    if len(self.snake) > 1 and (
+                        self.snake.direction == new_direction
+                        or (new_direction[0] * -1, new_direction[1] * -1)
+                        == self.snake.direction
+                    ):
+                        pass
+                    else:
+                        self.snake.update_direction(new_direction)
+                        break
 
-            snake.move()
-            if snake.is_body_valid():
-                if snake.is_apple_eaten(apple):
-                    snake.grow()
-                    apple.reposition(snake.body)
+                elif self.state == GameState.MAIN_MENU:
+                    if event.key == pygame.K_SPACE:
+                        self.state = GameState.IN_PROGRESS
+
+                elif self.state == GameState.PAUSED:
+                    if event.key == pygame.K_p:
+                        self.state = GameState.IN_PROGRESS
+
+                elif self.state == GameState.END:
+                    if event.key == pygame.K_SPACE:
+                        self.setup()
+                        self.state = GameState.IN_PROGRESS
+
+    def draw_grid(self):
+        for x in range(c.MAP_SIZE):
+            for y in range(c.MAP_SIZE):
+                pygame.draw.rect(self.surface, c.BLOCK_COLOR, rect_helper(x, y))
+
+    def draw(self):
+        self.draw_grid()
+        self.snake.draw(self.surface)
+        self.apple.draw(self.surface)
+
+        for obj in self.objects[self.state]:
+            obj.draw(self.surface)
+
+    def update(self):
+        if self.state == GameState.IN_PROGRESS:
+            self.snake.update()
+
+            if self.snake.is_body_valid():
+                if self.snake.can_eat_apple(self.apple):
+                    self.snake.grow()
+                    self.apple.reposition(self.snake.body)
             else:
-                game_state = GameState.END
+                self.state = GameState.END
 
-    elif game_state == GameState.PAUSED:
-        events = pygame.event.get()
-        for event in events:
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_p:
-                    game_state = GameState.IN_PROGRESS
-
-    else:
-        events = pygame.event.get()
-        for event in events:
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE:
-                    game_state = GameState.IN_PROGRESS
-                    snake = Snake(MAP_SIZE, snake_color, INITIAL_SNAKE_DIRECTION.value)
-                    apple = Apple(MAP_SIZE, apple_color)
-
-    # update screen code start here
-    if game_state == GameState.MAIN_MENU:
-        screen.fill(main_menu_background_color)
-        start_surface = font.render("Press any key to start", True, text_color)
-        start_rect = start_surface.get_rect(
-            center=(MAP_SIZE // 2 * BLOCK_SIZE, MAP_SIZE // 2 * BLOCK_SIZE)
+    def setup(self):
+        self.snake = Snake(c.MAP_SIZE, c.SNAKE_COLOR)
+        self.apple = Apple(c.MAP_SIZE, c.APPLE_COLOR)
+        pause_hint_text = Text(
+            0,
+            0,
+            lambda: "Press p to pause/unpause after game started",
+            self.big_font,
+            True,
         )
-        pause_game_tip_surface = font.render(
-            "Press p to pause after game started", True, text_color
+        start_text = Text(0, 50, lambda: "Press space to start", self.big_font, True)
+        score_text = Text(0, 0, lambda: f"Score: {len(self.snake)}", self.font)
+        play_again_text = Text(
+            0,
+            0,
+            lambda: f"You lose! Final Score: {len(self.snake)}. Press space to restart",
+            self.big_font,
+            True,
         )
-        pause_game_tip_rect = pause_game_tip_surface.get_rect(
-            center=(MAP_SIZE // 2 * BLOCK_SIZE, (MAP_SIZE // 2 + 1) * BLOCK_SIZE)
-        )
-        screen.blit(start_surface, start_rect)
-        screen.blit(pause_game_tip_surface, pause_game_tip_rect)
+        pause_text = Text(0, 0, lambda: "Game paused", self.big_font, True)
 
-    elif game_state == GameState.IN_PROGRESS:
-        screen.fill(gap_color)
-        for x in range(MAP_SIZE):
-            for y in range(MAP_SIZE):
-                pygame.draw.rect(screen, block_color, rect_helper(x, y))
+        self.objects[GameState.MAIN_MENU] = [pause_hint_text, start_text]
+        self.objects[GameState.PAUSED] = [pause_text]
+        self.objects[GameState.IN_PROGRESS] = [score_text]
+        self.objects[GameState.END] = [play_again_text]
 
-        for x, y in snake.body:
-            pygame.draw.rect(screen, snake.color, rect_helper(x, y))
+    def run(self):
+        pygame.display.set_caption("Snake game")
+        self.setup()
 
-        score_surface = font.render(f"Score: {snake.length()}", True, text_color)
-        screen.blit(score_surface, (0, 0))
-        pygame.draw.rect(screen, apple.color, rect_helper(apple.x, apple.y))
+        while True:
+            self.surface.fill(c.BACKGROUND_COLOUR)
+            self.handle_events()
+            self.update()
+            self.draw()
 
-    elif game_state == GameState.PAUSED:
-        pause_surface = big_font.render("Game paused", True, text_color)
-        pause_rect = pause_surface.get_rect(
-            center=(
-                MAP_SIZE // 2 * BLOCK_SIZE,
-                MAP_SIZE // 2 * BLOCK_SIZE,
-            )
-        )
-        screen.blit(pause_surface, pause_rect)
-    else:
-        score_surface = font.render(
-            f"You lose, Score: {snake.length()}", True, text_color
-        )
-        score_rect = score_surface.get_rect(
-            center=(MAP_SIZE // 2 * BLOCK_SIZE, MAP_SIZE // 2 * BLOCK_SIZE)
-        )
+            pygame.display.flip()
+            self.clock.tick(c.FPS)
 
-        play_again_surface = font.render("Press space to restart", True, text_color)
-        play_again_rect = score_surface.get_rect(
-            center=(MAP_SIZE // 2 * BLOCK_SIZE, (MAP_SIZE // 2 + 1) * BLOCK_SIZE)
-        )
 
-        screen.fill(main_menu_background_color)
-        screen.blit(score_surface, score_rect)
-        screen.blit(play_again_surface, play_again_rect)
+def main():
+    Game().run()
 
-    pygame.display.flip()
+
+if __name__ == "__main__":
+    main()

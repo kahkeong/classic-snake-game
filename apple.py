@@ -1,12 +1,14 @@
 import random
+import pygame
+from helper import rect_helper
 
 
 class Apple:
-    def __init__(self, map_length, appleColor):
+    def __init__(self, map_length, apple_color):
         self.map_length = map_length
-        self.color = appleColor
-        self.x = map_length // 3
-        self.y = map_length // 3
+        self.color = apple_color
+        self.x = random.randint(0, map_length - 1)
+        self.y = random.randint(0, map_length - 1)
 
     def position(self):
         return (self.x, self.y)
@@ -23,3 +25,6 @@ class Apple:
         next_position = random.sample(possible_positions, 1)[0]
         self.x = next_position[0]
         self.y = next_position[1]
+
+    def draw(self, surface):
+        pygame.draw.rect(surface, self.color, rect_helper(self.x, self.y))

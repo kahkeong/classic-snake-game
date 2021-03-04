@@ -1,10 +1,13 @@
+import pygame
 from collections import deque
+from helper import rect_helper
+from enum_snake_direction import SnakeDirection
 
 
 class Snake:
-    def __init__(self, map_length, color, initial_direction):
+    def __init__(self, map_length, color):
         self.map_length = map_length
-        self.direction = initial_direction
+        self.direction = SnakeDirection.TOP.value
         self.body = deque()
         self.body.append((map_length // 2, map_length // 2))
         self.color = color
@@ -20,7 +23,7 @@ class Snake:
         self.body.appendleft((next_head_x, next_head_y))
         self.last_popped_part = self.body.pop()
 
-    def is_apple_eaten(self, apple):
+    def can_eat_apple(self, apple):
         return self.head() == apple.position()
 
     def update_direction(self, direction):
@@ -34,7 +37,7 @@ class Snake:
             0 <= head_x <= self.map_length - 1 and 0 <= head_y <= self.map_length - 1
         ):
             return False
-        elif self.length() > 1:
+        elif len(self) > 1:
             for part in self.body:
                 # snake head collides into its own body
                 if part != self.head() and part == self.head():
@@ -47,5 +50,12 @@ class Snake:
     def head(self):
         return self.body[0]
 
-    def length(self):
+    def __len__(self):
         return len(self.body)
+
+    def update(self):
+        self.move()
+
+    def draw(self, surface):
+        for x, y in self.body:
+            pygame.draw.rect(surface, self.color, rect_helper(x, y))
