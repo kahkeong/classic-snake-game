@@ -26,5 +26,15 @@ Snake game has just the right amount of GUI and simple mechanism so I chose this
 #### Running the game without python
 - An executable file is included and it was generated with [pyinstaller](https://www.pyinstaller.org/)
 - Note that this is only tested with a Windows machine.
-
 ## **Screenshots**
+Main Menu
+
+![Main Menu](./screenshots/main_menu.png)
+
+Game paused
+
+![Game paused](./screenshots/game_paused.png)
+
+Game ended
+
+![Game ended](./screenshots/game_ended.png)

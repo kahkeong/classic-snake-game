@@ -115,7 +115,7 @@ class Game:
         pause_text = Text(0, 0, lambda: "Game paused", self.font, True)
 
         self.objects[GameState.MAIN_MENU] = [pause_hint_text, start_text]
-        self.objects[GameState.PAUSED] = [pause_text]
+        self.objects[GameState.PAUSED] = [score_text, pause_text]
         self.objects[GameState.IN_PROGRESS] = [score_text]
         self.objects[GameState.END] = [play_again_text]
 
