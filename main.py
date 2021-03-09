@@ -21,7 +21,6 @@ class Game:
 
         pygame.font.init()
         self.font = pygame.font.SysFont("Comic Sans MS", 15)
-        self.big_font = pygame.font.SysFont("Comic Sans MS", 25)
         self.surface = pygame.display.set_mode((c.WIDTH, c.HEIGHT))
 
     def handle_events(self):
@@ -101,19 +100,19 @@ class Game:
             0,
             0,
             lambda: "Press p to pause/unpause after game started",
-            self.big_font,
+            self.font,
             True,
         )
-        start_text = Text(0, 50, lambda: "Press space to start", self.big_font, True)
+        start_text = Text(0, 50, lambda: "Press space to start", self.font, True)
         score_text = Text(0, 0, lambda: f"Score: {len(self.snake)}", self.font)
         play_again_text = Text(
             0,
             0,
             lambda: f"You lose! Final Score: {len(self.snake)}. Press space to restart",
-            self.big_font,
+            self.font,
             True,
         )
-        pause_text = Text(0, 0, lambda: "Game paused", self.big_font, True)
+        pause_text = Text(0, 0, lambda: "Game paused", self.font, True)
 
         self.objects[GameState.MAIN_MENU] = [pause_hint_text, start_text]
         self.objects[GameState.PAUSED] = [pause_text]

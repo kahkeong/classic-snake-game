@@ -2,6 +2,7 @@ import pygame
 from collections import deque
 from helper import rect_helper
 from enum_snake_direction import SnakeDirection
+import config as c
 
 
 class Snake:
@@ -38,9 +39,11 @@ class Snake:
         ):
             return False
         elif len(self) > 1:
-            for part in self.body:
+            for index, part in enumerate(self.body):
+                if index == 0:
+                    continue
                 # snake head collides into its own body
-                if part != self.head() and part == self.head():
+                if part == self.head():
                     return False
         return True
 
@@ -57,5 +60,8 @@ class Snake:
         self.move()
 
     def draw(self, surface):
-        for x, y in self.body:
-            pygame.draw.rect(surface, self.color, rect_helper(x, y))
+        for index, (x, y) in enumerate(self.body):
+            if index == 0:
+                pygame.draw.rect(surface, c.SNAKE_HEAD_COLOR, rect_helper(x, y))
+            else:
+                pygame.draw.rect(surface, self.color, rect_helper(x, y))
